@@ -34,7 +34,7 @@ sudo ip link set can_chassis up type can bitrate 500000
 ros2 launch lookie_neo_base lookie_neo_base.launch.py
 ```
 
-节点启动时在 `port_name` 上探测 AGX_V2 协议。5 s 内没有底盘应答则报错并以退出码 1 退出。
+节点启动时打开 `port_name` 并使能指令模式。若 `connect_retries` 次尝试仍无法打开总线，则报错并以退出码 1 退出；底盘无应答的情况通过反馈诊断上报。
 
 在另一个终端查看反馈并发送一段短指令。**指令会让底盘运动。**
 
