@@ -142,9 +142,6 @@ bool LookieNeoBase::Start()
   diagnostics_pub_ = create_publisher<diagnostic_msgs::msg::DiagnosticArray>("/diagnostics", 10);
   cmd_vel_sub_ = create_subscription<geometry_msgs::msg::Twist>(
     "cmd_vel", 5, std::bind(&LookieNeoBase::OnCmdVel, this, std::placeholders::_1));
-  front_light_srv_ = create_service<std_srvs::srv::SetBool>(
-    "front_light",
-    std::bind(&LookieNeoBase::OnFrontLight, this, std::placeholders::_1, std::placeholders::_2));
   if (publish_odom_tf_) {
     tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
   }
@@ -160,17 +157,6 @@ bool LookieNeoBase::Start()
 void LookieNeoBase::OnCmdVel(const geometry_msgs::msg::Twist::SharedPtr msg)
 {
   robot_->SetMotionCommand(cmd_signs_.x * msg->linear.x, cmd_signs_.wz * msg->angular.z);
-}
-
-void LookieNeoBase::OnFrontLight(
-  const std_srvs::srv::SetBool::Request::SharedPtr request,
-  std_srvs::srv::SetBool::Response::SharedPtr response)
-{
-  robot_->SetLightCommand(request->data ? CONST_ON : CONST_OFF, 0);
-  front_light_on_ = request->data;
-  response->success = true;
-  response->message = front_light_on_ ? "front light on" : "front light off";
-  RCLCPP_INFO(get_logger(), "front light %s", front_light_on_ ? "on" : "off");
 }
 
 void LookieNeoBase::Stop()
@@ -270,8 +256,7 @@ void LookieNeoBase::PublishReports(const rclcpp::Time & stamp, bool fresh)
     Value("control_mode", ControlModeName(state.system_state.control_mode)),
     Value("vehicle_state", std::to_string(state.system_state.vehicle_state)),
     Value("error_code", Hex(state.system_state.error_code)),
-    Value("battery_voltage", Number(voltage)),
-    Value("front_light", front_light_on_ ? "on" : "off")};
+    Value("battery_voltage", Number(voltage))};
   array.status.push_back(base);
 
   const auto actuator = robot_->GetActuatorState();
